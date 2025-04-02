@@ -8,7 +8,9 @@ Tested on esp32-s3.
 
 ## Example execution
 
-Receiving some messages (before and after getting contacts) then sending back a ping ;)
+Receiving some messages (before and after getting contacts) then sending back a ping.
+
+There are still lots of debug msgs but it should give you an idea ;)
 
  <pre>
 MPY: soft reboot
