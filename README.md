@@ -2,9 +2,11 @@
 
 Bindings to access your [MeshCore](https://meshcore.co.uk) companion radio nodes on a micropython device.
 
-The meshcore firmware must be configured with serial rx/tx pins connected to the rx/tx pins of the device.
+The main difference with [meshcore_py](https://github.com/fdlamotte/meshcore_py) is that the api does not use asyncio anymore. Asyncio was necessary for using bleak but the main target here is serial communication ... The advantage is that it is easier to use interactively than on the async version. The api is (and should stay) the same.
 
-Tested on esp32-s3.
+The meshcore firmware can be configured with serial rx/tx pins connected to the rx/tx pins of the device.
+
+Tested on esp32-s3, and on unix using regular python.
 
 ## Example execution
 
