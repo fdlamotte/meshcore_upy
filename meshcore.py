@@ -236,9 +236,12 @@ class MeshCore:
     def send_device_qeury(self):
         return self.send(b"\x16\x03");
 
-    def send_advert(self):
+    def send_advert(self, flood=False):
         """ Make the node send an advertisement """
-        return self.send(b"\x07")
+        if flood :
+            return self.send(b"\x07\x01")
+        else :
+            return self.send(b"\x07")
 
     def set_name(self, name):
         """ Changes the name of the node """

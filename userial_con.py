@@ -1,3 +1,5 @@
+from machine import UART
+
 class SerialCon:
     def __init__(self, uart) :
         self.uart = uart
