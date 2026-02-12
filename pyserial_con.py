@@ -1,8 +1,7 @@
 class SerialCon:
     def __init__(self, uart) :
         self.uart = uart
-        self.frame_started = False
-        self.frame_size = 0
+        self.frame_expected_size = 0
         self.header = b""
         self.inframe = b""
         self.recvd = []
@@ -31,25 +30,45 @@ class SerialCon:
         data = self.recv()
         self.handle_rx(data)
 
-    def handle_rx (self, data) :
-        headerlen = len(self.header)
-        framelen = len(self.inframe)
-        if not self.frame_started : # wait start of frame
-            if len(data) >= 3 - headerlen:
-                self.header = self.header + data[:3-headerlen]
-                self.frame_started = True
-                self.frame_size = int.from_bytes(self.header[1:], "little")
-                self.handle_rx(data[3-headerlen:])
-            else:
-                self.header = self.header + data
-        else:
-            if framelen + len(data) < self.frame_size:
-                self.inframe = self.inframe + data
-            else:
-                self.inframe = self.inframe + data[:self.frame_size-framelen]
-                self.recvd.append(self.inframe)
-                self.frame_started = False
+    def handle_rx(self, data):
+        if len(self.header) == 0: # did not find start of frame yet
+            # search start of frame (0x3e) in data
+            idx = data.find(b"\x3e")
+            if idx < 0: # no start of frame
+                return
+            self.header = data[0:1]
+            data = data[1:]
+
+        if len(self.header) < 3: # header not complete yet
+            while len(self.header) < 3 and len(data) > 0:
+                self.header = self.header + data[0:1]
+                data = data[1:]
+            if len(self.header) < 3: # still not complete
+                return
+
+            # get size and check
+            self.frame_expected_size = int.from_bytes(self.header[1:], "little", signed=False)
+            if self.frame_expected_size > 300 : # invalid size
+                # reset inframe
                 self.header = b""
                 self.inframe = b""
-                if framelen + len(data) > self.frame_size:
-                    self.handle_rx(data[self.frame_size-framelen:])        
+                self.frame_expected_size = 0
+                if len(data) > 0: # rerun handle_rx on remaining data
+                    self.handle_rx(data)
+                    return
+
+        if len(data) + len(self.inframe) < self.frame_expected_size:
+            self.inframe = self.inframe + data
+            # frame not complete, wait for next rx
+            return
+
+        upbound = self.frame_expected_size - len(self.inframe)
+        self.inframe = self.inframe + data[0:upbound]
+        data = data[upbound:]
+        self.recvd.append(self.inframe)
+        # reset inframe
+        self.inframe = b""
+        self.header = b""
+        self.frame_expected_size = 0
+        if len(data) > 0: # rerun handle_rx on remaining data
+            self.handle_rx(data)
